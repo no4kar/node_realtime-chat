@@ -3,67 +3,101 @@
 import { WebSocketServer } from 'ws';
 
 import { server } from './server.js';
-import { emitter as messageEmitter } from './controllers/message.controller.js';
-import { emitter as roomEmitter } from './controllers/room.controller.js';
+import * as messageService from './services/message.service.js';
+import * as roomService from './services/room.service.js';
 import { MessageAction } from './types/message.type.js';
+import { RoomAction } from './types/room.type.js';
 
 const wss = new WebSocketServer({ server });
 
-wss.on('connection', (client) => {
-  client.on('message', (message) => {
+wss.on('connection', (client, req) => {
 
+  client.customInfo = {};
+
+  client.on('message', (message) => {
     /** @type { import('./types/message.type.js').MessageClient } */
     const data = JSON.parse(message.toString());
 
     console.dir(data);
 
     switch (data.action) {
-      case MessageAction.ENTER_THE_ROOM: {
+      case RoomAction.ENTER: {
         const { roomId } = data.payload;
 
         console.info(`
         roomId = ${roomId}
+        clientIP = ${req.socket.remoteAddress}
+        clientPORT = ${req.socket.remotePort}
         `);
 
         if (!roomId) {
           return;
         }
 
-        client.roomId = roomId;
+        client.customInfo.roomId = roomId;
+        roomService.emitter.emit(RoomAction.ENTER, { id: client.customInfo.roomId });
 
         console.info(`
-        client.roomId = ${client.roomId}
+        client.customInfo.roomId = ${client.customInfo.roomId}
         `);
 
         return;
       }
 
-      case MessageAction.LEAVE_THE_ROOM: {
-        delete client.roomId;
+      case RoomAction.LEAVE: {
+        delete client.customInfo.roomId;
         return;
       }
 
       default:
-        console.info(`ERROR`);
+        console.info('Unprocessed message');
         break;
     }
   });
 
-  client.once('close', () => {
-    delete client.roomId;
+  client.on('close', () => {
+    roomService.emitter.emit(RoomAction.LEAVE, { id: client.customInfo.roomId });
+    delete client.customInfo.roomId;
   });
+
+  console.info(`
+  wss.on
+  \t'connection'
+  `);
 });
 
-messageEmitter.on('create', (message) => {
+messageService.emitter.on(MessageAction.CREATE, (message) => {
+  console.info(MessageAction.CREATE);
+  console.dir(message);
+
   for (const client of wss.clients) {
-    if (client.roomId === message.roomId) {
-      client.send(JSON.stringify({ action: MessageAction.CREATE_MESSAGE, payload: message }));
+    if (client.customInfo.roomId === message.roomId) {
+      client.send(JSON.stringify({
+        action: MessageAction.CREATE,
+        payload: message,
+      }));
     }
   }
 });
 
-roomEmitter.on('update', (rooms) => {
+roomService.emitter.on(RoomAction.UPDATE, (rooms) => {
+  // console.info(RoomAction.UPDATE);
+  // console.dir(rooms);
+
   for (const client of wss.clients) {
-    client.send(JSON.stringify(rooms));
+    // console.info(client.readyState);
+    client.send(JSON.stringify({
+      action: RoomAction.UPDATE,
+      payload: rooms,
+    }));
   }
 });
+
+// setInterval(() => roomService.emitUpdate(), 3000);
+
+console.info(`
+messageEmitter.listenerCount
+\t${MessageAction.CREATE} = ${messageService.emitter.listenerCount(MessageAction.CREATE)}
+roomEmitter.listenerCount
+\t${MessageAction.CREATE} = ${roomService.emitter.listenerCount(RoomAction.UPDATE)}
+`);

@@ -5,6 +5,7 @@ import { catchError } from '../middlewares/catchError.js';
 export const router = express.Router();
 
 router.get('/', catchError(roomController.getAll));
+router.get('/:name', catchError(roomController.getByName));
 
 router.post('/',catchError(roomController.post));
 

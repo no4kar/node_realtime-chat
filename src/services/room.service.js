@@ -1,5 +1,6 @@
 import { EventEmitter } from 'node:events';
 import { Room as Rooms } from '../models/Room.model.js';
+import { RoomAction } from '../types/room.type.js';
 
 export const emitter = new EventEmitter();
 
@@ -47,4 +48,16 @@ export async function create(properties) {
 /** @param {import('sequelize').Model} room */
 export function remove(room) {
   return room.destroy({ cascade: true });
+}
+
+export async function emitUpdate() {
+  emitter.emit(
+    RoomAction.UPDATE,
+    (await getAll()).map(normalize),
+  );
+}
+
+/** @param {Object} conditions */
+export async function count(conditions) {
+  return Rooms.count(conditions);
 }

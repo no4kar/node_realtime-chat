@@ -1,4 +1,7 @@
+import { EventEmitter } from 'node:events';
 import { Message as Messages } from '../models/Message.model.js';
+
+export const emitter = new EventEmitter();
 
 /** @param {Object} properties */
 export function normalize({

@@ -1,4 +1,4 @@
-import { } from './func.type.js';
+// import { } from './func.type.js';
 
 /**
  * @typedef {Object} Message
@@ -16,11 +16,5 @@ import { } from './func.type.js';
 
 /** @enum {String} */
 export const MessageAction = {
-  CREATE_MESSAGE: 'CREATE_MESSAGE',
-  CREATE_ROOM: 'CREATE_ROOM',
-  DELETE_ROOM: 'DELETE_ROOM',
-  RENAME_ROOM: 'RENAME_ROOM',
-  UPDATE_ROOMS: 'UPDATE_ROOMS',
-  ENTER_THE_ROOM: 'ENTER_THE_ROOM',
-  LEAVE_THE_ROOM: 'LEAVE_THE_ROOM',
+  CREATE: 'CREATE_MESSAGE',
 };

@@ -1,10 +1,8 @@
-import { EventEmitter } from 'node:events';
-
 import * as roomService from '../services/room.service.js';
 import * as messageService from '../services/message.service.js';
 import { ApiError } from '../exceptions/api.error.js';
+import { MessageAction } from '../types/message.type.js';
 
-export const emitter = new EventEmitter();
 
 /** @typedef {import('../types/func.type.js').TyFuncController} TyMessageController*/
 /** @typedef {import('../types/message.type.js').Message} Message*/
@@ -35,13 +33,6 @@ export async function post(req, res) {
     throw ApiError.BadRequest();
   }
 
-  console.info(`
-  mark-1
-  ${author}
-  ${text}
-  ${roomId}
-  `);
-
   const room = await roomService.getById(roomId);
 
   if (!room) {
@@ -54,7 +45,7 @@ export async function post(req, res) {
     roomId: room.id,
   });
 
-  emitter.emit('create', newMessage.dataValues);
+  messageService.emitter.emit(MessageAction.CREATE, newMessage.dataValues);
 
   res.status(201)
     .send(messageService.normalize(newMessage));
